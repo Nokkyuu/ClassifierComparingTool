@@ -1,16 +1,17 @@
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import ConvergenceWarning
-# import joblib
+import joblib
 
 class MLHandler(ABC):
+    """Base class for all ML handlers. It initializes the model and parameters. and defines the main methods"""
     def __init__(self, logger:logging.Logger = logging.getLogger()):
         self.model = self._initialize_model()
         self.params = {}
@@ -33,13 +34,43 @@ class MLHandler(ABC):
         Returns:
             model (Estimator) : best estimator found by grid search
             score (float): best score found by grid search
+            params (dict): best parameters found by grid search
         """
         self.logger.info(f"Starting grid search with parameters: {self.params}")
         warnings.filterwarnings("ignore", category=ConvergenceWarning) #to avoid polluting output with convergence warnings
         grid_search = GridSearchCV(self.model, self.params, cv=5, scoring=scoring)
         grid_search.fit(features, target)
         self.logger.info(f"Best parameters found: {grid_search.best_params_}")
-        return grid_search.best_estimator_, grid_search.best_score_
+        return grid_search.best_estimator_, grid_search.best_score_, grid_search.best_params_
+    def save_model(self, model, path: str):
+        """saves the model to the given path as binary file using joblib.
+
+        Args:
+            model (ml model): trained ml model to save
+            path (str): path and filename to save the model to
+        """
+        try:
+            joblib.dump(model, path)
+            self.logger.info(f"Model '{model}' saved to {path}")
+        except Exception as e:
+            self.logger.error(f"Error saving model to {path}: {e}")
+    
+    def load_model(self, path: str):
+        """loads the model from the given path as binary file using joblib.
+
+        Args:
+            path (str): path and filename to load the model from
+
+        Returns:
+            model (ml model): loaded ml model
+        """
+        try:
+            model = joblib.load(path)
+            self.logger.info(f"Model '{model}' loaded from {path}")
+            return model
+        except FileNotFoundError:
+            self.logger.error(f"Model file not found at {path}")
+            return None
 
 class DecisionTreeHandler(MLHandler):
     """Handler for Logistic Regression model. Instantiate with a logger.
@@ -64,7 +95,8 @@ class DecisionTreeHandler(MLHandler):
             }
 
     def _initialize_model(self):
-        return tree.DecisionTreeClassifier()
+        return DecisionTreeClassifier()
+
 
 class RandomForestHandler(MLHandler):
     """Handler for Logistic Regression model. Instantiate with a logger.
@@ -89,7 +121,8 @@ class RandomForestHandler(MLHandler):
             }
     def _initialize_model(self):
         return RandomForestClassifier()
-
+    
+    
 class KNNHandler(MLHandler):
     """Handler for Logistic Regression model. Instantiate with a logger.
     parameter for grid search are:
@@ -124,16 +157,17 @@ class LogisticRegressionHandler(MLHandler):
         if params:
             self.params = params
         else:
-            self.params = [
-                #list of params because some combinations are not valid
-                {'solver': ['saga'], 'penalty': ['l1', 'l2', 'elasticnet'], 'C': [0.001, 0.01, 0.1, 1, 10, 100], 'max_iter': [100, 200, 300]},
-                {'solver': ['lbfgs', 'newton-cg', 'sag'], 'penalty': ['l2'], 'C': [0.001, 0.01, 0.1, 1, 10, 100], 'max_iter': [100, 200, 300]}
-            ]
+            self.params = {'solver': ['saga'], 
+                           'penalty': ['l1', 'l2', 'elasticnet'], 
+                           'C': [0.001, 0.01, 0.1, 1, 10, 100], 
+                           'max_iter': [100, 200, 300]}
+            
     def _initialize_model(self):
         return LogisticRegression()
 
 
 if __name__ == "__main__":
+    #for testing purposes, you can run this script directly
     import pandas as pd
     from logging.config import fileConfig
     fileConfig("logging.ini")
@@ -153,13 +187,13 @@ if __name__ == "__main__":
     rf_handler = RandomForestHandler(logger)
     knn_handler = KNNHandler(logger)
 
-    best_model, best_score = logreg_handler.grid_search(features, target, scoring='accuracy')
+    best_model, best_score, best_para = logreg_handler.grid_search(features, target, scoring='accuracy')
     logger.info(f"logistic regression: Best model: {best_model} \n Best score: {best_score}")
-    best_model, best_score = tree_handler.grid_search(features, target, scoring='accuracy')
+    best_model, best_score, best_para = tree_handler.grid_search(features, target, scoring='accuracy')
     logger.info(f"decision tree: Best model: {best_model} \n Best score: {best_score}")
-    best_model, best_score = rf_handler.grid_search(features, target, scoring='accuracy')
+    best_model, best_score, best_para = rf_handler.grid_search(features, target, scoring='accuracy')
     logger.info(f"random forest: Best model: {best_model} \n Best score: {best_score}")
-    best_model, best_score = knn_handler.grid_search(features, target, scoring='accuracy')
+    best_model, best_score, best_para = knn_handler.grid_search(features, target, scoring='accuracy')
     logger.info(f"knn: Best model: {best_model} \n Best score: {best_score}")
     logger.info("Finished ML Handler example")
 
