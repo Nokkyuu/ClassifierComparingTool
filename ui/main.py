@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Constants
 MODEL_DIR = "models"
 
 def initialize_session_state():
@@ -51,6 +50,7 @@ def render_column_selection(data_handler, logger, columns):
         data_handler.feature_select(feature_cols)
         data_handler.target_select(target_col)
         logger.info(f"Features: {feature_cols}, Target: {target_col}")
+        st.success(f"Features: {', '.join(st.session_state['features'])} - Target: {st.session_state['target']}")
 
 def render_classifier_comparison(classifiers, data_handler, scoring):
     """Render the classifier comparison UI.
@@ -59,8 +59,9 @@ def render_classifier_comparison(classifiers, data_handler, scoring):
         data_handler (DataHandler): Instance of DataHandler to manage data.
         scoring (str): Scoring method for model evaluation.
     """
-    st.write(f"Features: {st.session_state['features']}")
-    st.write(f"Target: {st.session_state['target']}")
+    
+    #st.write(f")
+    
     
     selected_classifier = st.multiselect(
         "Select Classifiers to compare",
@@ -95,7 +96,7 @@ def render_results():
     """Render comparison results."""
     results = st.session_state["results"]
     if results:
-        st.subheader("Comparison Results")
+        st.subheader("📋 Comparison Results")
         df = pd.DataFrame(results)
         st.dataframe(df, hide_index=True)
 
@@ -116,7 +117,7 @@ def render_model_downloads(classifiers):
                 if os.path.exists(model_path):
                     with open(model_path, "rb") as f:
                         st.download_button(
-                            label=f"Download {model_info['classifier']} Model",
+                            label=f"⬇️ Download {model_info['classifier']} Model",
                             data=f,
                             file_name=f"{model_info['classifier']}_model.pkl",
                         )

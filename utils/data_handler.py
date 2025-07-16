@@ -9,7 +9,7 @@ class DataHandler:
         self.target = None
         self.logger = logger
 
-    def load_data(self, file, delimiter: str = ','):
+    def load_data(self, file, delimiter: str = ','): 
         """Load data from a CSV file.
 
         Args:

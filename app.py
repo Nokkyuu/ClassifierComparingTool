@@ -37,7 +37,7 @@ if "data_handler" not in st.session_state:
     st.session_state["data_handler"] = DataHandler(logger)
 data_handler = st.session_state["data_handler"]
 
-st.title("Classifier Comparing Tool")
+st.title("👀 Classifier Comparing Tool")
 
 uploaded_file, scoring = sidebar_builder(logger)
 

@@ -15,7 +15,7 @@ def sidebar_builder(logger):
         str: The selected scoring method.
     """
     st.sidebar.header("Data Upload")
-    
+    #TODO: add option to choose delimiter in UI
     uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
     logger.info("File uploaded: %s", uploaded_file.name if uploaded_file else "No file uploaded")
     st.sidebar.header("Classifier Parameters")
